@@ -1,0 +1,22 @@
+C
+===
+simulate
+secret tokens
+how many colours? I think 2^16, since 2^8 players would not fit nicely in the simulated world
+track scores?
+
+
+js
+===
+simulate independently
+nice interface (mobile?)
+zoom, scroll, tap on mobile
+on desktop: scroll wheel, right click and drag, left click?
+keyboard shortcuts should save laptops.
+
+other
+=====
+art/sound
+--------
+favicon
+1213.wav (How hard can the file format be?)

@@ -1,0 +1,112 @@
+<html>
+<head>
+<title>In Memory of John Conway</title>
+<style type="text/css" >
+
+html, body {
+  width:  100%;
+  height: 100%;
+  margin: 0;
+  border: 0;
+  overflow: hidden;
+  display: block;
+}
+#main{
+position:absolute;
+left:0px;
+top:0px;
+}
+</style>
+</head>
+<body>
+<div id=float>
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Ah, iOS</div>
+<canvas id=main />
+<script>
+function mod(m,n){
+    return ((m%n)+n)%n
+}
+function get(x,y){
+  return grid[mod(x,grid.length)][mod(y,grid[0].length)];
+}
+
+function step(){// Advance the grid 1 step in the gol
+  let tmp=[]
+  for(let x=0;x<grid.length;x++){
+    let r=[]
+    for(let y=0;y<grid[0].length;y++){
+      let v=grid[x][y]
+      //console.log("pos",x,y,v)
+      if(v){
+        let numset=0
+        for(let i=-1;i<2;i++)
+          for(let j=-1;j<2;j++)
+            if(i||j)
+            {
+            //console.log("s",i,j,get(x+i,y+j));
+            if(get(x+i,y+j)) numset+=1}
+        r.push(((numset==2 || numset==3)|0) && v)
+      } else{
+        let fst = 0;
+        let snd = 0;
+        let res = 0;
+        for(let i=-1;i<2;i++)
+          for(let j=-1;j<2;j++)
+            if(i||j){
+              let k=get(x+i,y+j)
+              //console.log("b",i,j,k)
+              if(k){
+                if(snd && fst===0) res=0
+                else if (snd){
+                  if(fst===snd || fst===k) res=fst
+                  else if (snd===k) res=snd
+                  else res=1
+                  fst=0
+                }
+                else {
+                  snd=fst
+                  fst=k
+                }
+              }
+        }
+        r.push(res)
+      }
+    }
+    //console.log(""+r)
+    tmp.push(r)
+  }
+  grid=tmp
+}
+
+//https://stackoverflow.com/questions/1664785/resize-html5-canvas-to-fit-window
+canvas = document.getElementById("main");
+var ctx = canvas.getContext("2d");
+grid=[]
+for(let i=0;i<256;i++){
+  r=[]
+  for(let j=0;j<256;j++){
+    r.push(Math.floor(Math.random()*3))
+  }
+  grid.push(r)
+}
+xoff=0;// in cells, float
+yoff=0;
+scale=10.1;// pixels per cell, float
+cols=["white","black","red"];
+function redraw(){
+  //TODO for very small scales, draw everything once, then blit that repeatedly
+  for(let x=Math.floor(xoff); x<Math.floor(xoff+w/scale); x++  ){
+    for(let y=Math.floor(yoff); y<Math.ceil(yoff+h/scale); y++  ){
+      ctx.fillStyle = cols[get(x,y)];
+      ctx.fillRect((x-xoff)*scale,(y-yoff)*scale,scale,scale)
+    }
+  }
+}
+function resizeCanvas() {
+  canvas.width = w = window.innerWidth;
+  canvas.height = h = window.innerHeight;
+  redraw();
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas, false);
+</script>
