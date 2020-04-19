@@ -7,14 +7,12 @@
 #include<string.h>
 #include<sys/socket.h>
 #include<unistd.h>
-#include<sys/random.h>
 #include<time.h>
 
 #define WIDTH (1<<10)
 #define HEIGHT (1<<9)
 
 #define MAXPLAYERS (1<<12)
-
 
 /// RESPONSES
 
@@ -91,6 +89,8 @@ char newplayerChunk[] = "XX\r\n"
 "\r\n";
 char* npdata;
 
+FILE * randFile;
+
 ///UTILS
 
 int snd(int sock, char* msg){
@@ -119,6 +119,10 @@ unsigned int readnat(char** s){
         (*s)++;
     }
     return n;
+}
+
+int getrandom(char* x, int l, int no_idea){
+    return fread(x,1,l,randFile);
 }
 
 char b64[64] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -515,6 +519,10 @@ int setup(){
     startsz[1] = strchr(startChunk,'H');
     dataStart = strchr(dataChunk,'X');
     npdata = strchr(newplayerChunk,'N');
+
+    randFile = fopen("/dev/urandom","r");
+    if (randFile==0){return -2;}
+
     FILE * file = fopen("init.html","r");
     if (file==0){return -2;}
     int k = fread(initChunk+6,1,10000,file);
