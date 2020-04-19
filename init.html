@@ -26,6 +26,11 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
 function mod(m,n){
     return ((m%n)+n)%n
 }
+cols={0:"white",1:"black"}
+function getcol(n){
+  if(!cols[n]) cols[n]=`hsl(${n*101},100%,30%)`;// Todo: consider HSLuv
+  return cols[n]
+}
 function get(x,y){
   return grid[mod(x,grid.length)][mod(y,grid[0].length)];
 }
@@ -82,23 +87,25 @@ function step(){// Advance the grid 1 step in the gol
 canvas = document.getElementById("main");
 var ctx = canvas.getContext("2d");
 grid=[]
+/*
 for(let i=0;i<256;i++){
   r=[]
   for(let j=0;j<256;j++){
     r.push(Math.floor(Math.random()*3))
   }
   grid.push(r)
-}
+}*/
 xoff=0;// in cells, float
 yoff=0;
 scale=10.1;// pixels per cell, float
-cols=["white","black","red"];
 function redraw(){
   //TODO for very small scales, draw everything once, then blit that repeatedly
-  for(let x=Math.floor(xoff); x<Math.floor(xoff+w/scale); x++  ){
-    for(let y=Math.floor(yoff); y<Math.ceil(yoff+h/scale); y++  ){
-      ctx.fillStyle = cols[get(x,y)];
-      ctx.fillRect((x-xoff)*scale,(y-yoff)*scale,scale,scale)
+  if(grid.length>0){
+    for(let x=Math.floor(xoff); x<Math.floor(xoff+w/scale); x++  ){
+      for(let y=Math.floor(yoff); y<Math.ceil(yoff+h/scale); y++  ){
+        ctx.fillStyle = getcol(get(x,y));
+        ctx.fillRect((x-xoff)*scale-0.3,(y-yoff)*scale-0.3,scale+0.6,scale+0.6)
+      }
     }
   }
 }
@@ -109,4 +116,22 @@ function resizeCanvas() {
 }
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas, false);
+pos=0
+function start(x,y,wi,he){
+  xoff=x - w/scale/2
+  yoff=y - h/scale/2
+  wid=wi
+  hei=he
+}
+dats=[]
+function d(data){
+  dat = atob(data)
+  dats.push(data)
+  dats.push(dat)
+  for (let i=0;i<dat.length; i+=2){
+    if(pos%wid==0) grid.push([]);
+    grid[grid.length-1].push(dat.charCodeAt(i)*256+dat.charCodeAt(i+1))
+    pos+=1
+  }
+}
 </script>
