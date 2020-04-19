@@ -1,5 +1,6 @@
 <html>
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>In Memory of John Conway</title>
 <style type="text/css" >
 
@@ -17,6 +18,7 @@ left:0px;
 top:0px;
 }
 </style>
+<!-- <script type="text/javascript" src="hammer.min.js"></script>-->
 </head>
 <body>
 <div id=float>
@@ -32,7 +34,7 @@ function getcol(n){
   return cols[n]
 }
 function get(x,y){
-  return grid[mod(x,grid.length)][mod(y,grid[0].length)];
+  return grid[mod(x,wid)][mod(y,hei)];
 }
 
 function step(){// Advance the grid 1 step in the gol
@@ -80,6 +82,7 @@ function step(){// Advance the grid 1 step in the gol
     //console.log(""+r)
     tmp.push(r)
   }
+  prev=grid
   grid=tmp
 }
 
@@ -87,6 +90,7 @@ function step(){// Advance the grid 1 step in the gol
 canvas = document.getElementById("main");
 var ctx = canvas.getContext("2d");
 grid=[]
+prev=[]
 /*
 for(let i=0;i<256;i++){
   r=[]
@@ -98,6 +102,8 @@ for(let i=0;i<256;i++){
 xoff=0;// in cells, float
 yoff=0;
 scale=10.1;// pixels per cell, float
+clicked=""
+plnum=0
 function redraw(){
   //TODO for very small scales, draw everything once, then blit that repeatedly
   if(grid.length>0){
@@ -108,20 +114,28 @@ function redraw(){
       }
     }
   }
+  if(clicked){
+      ctx.fillStyle="#888"
+      ctx.fillRect((clicked[0]-xoff)*scale-0.3,(clicked[1]-yoff)*scale-0.3,scale+0.6,scale+0.6)
+  }
+  ctx.strokeStyle=getcol(plnum)
+  ctx.lineWidth=10
+  ctx.strokeRect(0,0,w,h)
 }
 function resizeCanvas() {
   canvas.width = w = window.innerWidth;
   canvas.height = h = window.innerHeight;
   redraw();
 }
-resizeCanvas();
 window.addEventListener('resize', resizeCanvas, false);
+resizeCanvas();
 pos=0
 function start(x,y,wi,he){
   xoff=x - w/scale/2
   yoff=y - h/scale/2
   wid=wi
   hei=he
+  setTimeout(resizeCanvas,100)
 }
 dats=[]
 function d(data){
@@ -129,9 +143,122 @@ function d(data){
   dats.push(data)
   dats.push(dat)
   for (let i=0;i<dat.length; i+=2){
-    if(pos%wid==0) grid.push([]);
-    grid[grid.length-1].push(dat.charCodeAt(i)*256+dat.charCodeAt(i+1))
+    if(pos%hei==0) grid.push([]);
+    grid[grid.length-1].push(dat.charCodeAt(i)+dat.charCodeAt(i+1)*256)
     pos+=1
   }
+  if(pos==wid*hei){
+    step()
+    resizeCanvas()
+    redraw()
+  }
 }
+function tick(...mvs){
+  for(let i=0;i<mvs.length;i+=2){
+    grid[mvs[i]][mvs[i+1]]=1
+  }
+  step()
+  clicked=""
+  redraw()
+}
+function send(x,y){
+    fetch([plnum,tok,x,y].join("/"),{method:"POST"})
+    clicked=[x,y]
+    redraw()
+}
+function np(n,x,y){
+  for(let i=wid-1;i<wid+3;i++)
+    for(let j=hei-1;j<hei+3;j++){
+      prev[(x+i)%wid][(y+j)%hei] = (i&2 || j&2)?0:n
+    }
+  grid=prev
+  step()
+}
+
+function clk(e){
+  var x=mod(Math.floor((e.clientX/scale)+xoff),wid)
+  var y=mod(Math.floor((e.clientY/scale)+yoff),hei)
+  console.log(x,y,get(x,y))
+  send(x,y)
+}
+function scl(x,y,factor){
+  x/=scale
+  y/=scale
+  if(d!=0){
+    var oldscale=scale
+    scale*=factor
+    if(scale<1)scale=1;
+    if(scale>1000)scale=1000;
+    var sr=oldscale/scale
+    xoff -= x*(sr-1)
+    yoff -= y*(sr-1)
+    redraw()
+  }
+}
+function whl(e){
+  if(e.deltaY!=0)scl(e.clientX,e.clientY,Math.pow(0.95,e.deltaY))
+}
+function scroll(dx,dy){
+  console.log(dx,dy,scale)
+  xoff+=dx/scale
+  yoff+=dy/scale
+  redraw()
+}
+window.addEventListener("click",clk)
+window.addEventListener("wheel",whl)
+mousepos=[0,0]
+window.addEventListener("mousedown",function(e){
+  if(e.button===1)mousepos=[e.clientX,e.clientY]
+})
+window.addEventListener("mousemove",function(e){
+  if(e.buttons&4){
+    scroll(mousepos[0]-e.clientX,mousepos[1]-e.clientY)
+    mousepos=[e.clientX,e.clientY]
+  }
+})
+document.addEventListener('keydown', (event) => {
+  switch(event.key){
+    case "a":
+    case "h":
+    case "ArrowLeft":
+       scroll(-100,0)
+       break
+    case "d":
+    case "l":
+    case "ArrowRight":
+       scroll(100,0)
+       break
+    case "w":
+    case "k":
+    case "ArrowUp":
+       scroll(0,-100)
+       break
+    case "s":
+    case "j":
+    case "ArrowDown":
+       scroll(0,100)
+       break
+  }
+});
+lasttch=""
+function ts(e){
+  if(e.touches.length>1) lasttch=""
+  else{
+    var t=e.touches[0]
+    lasttch=[t.clientX,t.clientY]
+  }
+}
+function tm(e){
+  if(e.touches.length>1) lasttch=""
+  else if (lasttch){
+    var t=e.touches[0]
+    scroll(lasttch[0]-t.clientX, lasttch[1]-t.clientY)
+    lasttch=[t.clientX,t.clientY]
+  }
+}
+
+window.addEventListener('touchstart', ts)
+window.addEventListener('touchmove', tm)
+// window.addEventListener('touchend', te)
+
 </script>
