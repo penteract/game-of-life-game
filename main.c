@@ -551,6 +551,19 @@ int setup(){
 
 time_t prev;
 
+bool safe;
+
+void alrm(int x){
+    if(safe){
+        time_t new = time(0);
+        if(new!=prev){
+            tick();
+            prev=new;
+        }
+    }
+    alarm(1);
+}
+
 int main(){
     puts("let's begin");
     int c=setup();
@@ -565,6 +578,8 @@ int main(){
         return 1;
     }
     signal(SIGPIPE, SIG_IGN);
+    signal(SIGALRM, alrm);
+    alarm(1);
 
     //Really helps debugging
     int enable = 1;
@@ -572,11 +587,11 @@ int main(){
     struct timeval timeout;
     timeout.tv_sec=0;
     timeout.tv_usec=100000;
-    if(setsockopt(sock_listen, SOL_SOCKET, SO_RCVTIMEO,
+    /*if(setsockopt(sock_listen, SOL_SOCKET, SO_RCVTIMEO,
        &timeout, sizeof(timeout))<0){
         puts("setting timeout failed");
         return 1;
-    }
+    }*/
     struct sockaddr_in server, client;
     server.sin_addr.s_addr = INADDR_ANY;
     server.sin_family = AF_INET;
@@ -590,8 +605,10 @@ int main(){
     puts("Listening");
     while(true){
         int k;
+        safe=true;
         int new_socket = accept(sock_listen, (struct sockaddr*) &client,
                                 (socklen_t*) &k);
+        safe=false;
         if(new_socket>0){
             char request[101];
             int c = recv(new_socket, request,100, 0);
