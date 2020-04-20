@@ -521,7 +521,7 @@ int setup(){
     npdata = strchr(newplayerChunk,'N');
 
     randFile = fopen("/dev/urandom","r");
-    if (randFile==0){return -2;}
+    if (randFile==0){return -6;}
 
     FILE * file = fopen("init.html","r");
     if (file==0){return -2;}
@@ -553,8 +553,9 @@ time_t prev;
 
 int main(){
     puts("let's begin");
-    if (setup()){
-        puts("setup failed");
+    int c=setup()
+    if (c){
+        printf("setup failed %d\n",c);
         return 1;
     }
     int sock_listen;
