@@ -12,7 +12,7 @@
 #define WIDTH (1<<10)
 #define HEIGHT (1<<9)
 
-#define MAXPLAYERS (1<<12)
+#define MAXPLAYERS (1<<10)
 
 /// RESPONSES
 
@@ -544,8 +544,8 @@ int setup(){
     hammerResp[l+eight]='\n';
     sprintf(hammerResp+l+eight+k,"\r\n");
     
-    width=32;
-    height=40;
+    width=256;
+    height=256;
     return 0;
 }
 
