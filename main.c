@@ -553,7 +553,7 @@ time_t prev;
 
 int main(){
     puts("let's begin");
-    int c=setup()
+    int c=setup();
     if (c){
         printf("setup failed %d\n",c);
         return 1;
