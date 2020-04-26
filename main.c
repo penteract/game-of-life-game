@@ -12,7 +12,7 @@
 #define WIDTH (1<<10)
 #define HEIGHT (1<<9)
 
-#define MAXPLAYERS (1<<10)
+#define MAXPLAYERS (1<<5)
 
 /// RESPONSES
 
@@ -57,14 +57,9 @@ char okResp[] = "HTTP/1.1 204 No Content\r\n"
 
 char initChunk[10009];
 
-char hammerResp[23000]="HTTP/1.1 200 OK\r\n"
-"Content-Type: text/javascript\r\n"
-"Connection: close\r\n"
-"Content-Length:";
-
 // WIDTH=1024, 4*(1026/3)= 1368
 #define DATASIZE (2*HEIGHT)
-char dataChunk[4*(DATASIZE/3)+31] = "56C\r\n"
+char dataChunk[4*((DATASIZE+2)/3)+31] = "56C\r\n"
 "\n<script>"
 "d(\"X";
 char* dataStart;
@@ -318,7 +313,7 @@ int sendStart(int idx, short* startpos ){
     return snd(players[idx].conn,startChunk);
 }
 void send_all(char* msg){
-    puts("sending");
+    printf("sending to all: ");
     puts(msg);
     int l=strlen(msg);
     while(l>0){
@@ -380,7 +375,6 @@ void sendNewPlayer(int idx, short* xy){
 void tick(){
     step();
     int i=0;
-    printf("%d\n",numplays);
     startScript();
     while(i<numplays){
         unsigned short* x = players[plays[i]].move;
@@ -406,20 +400,22 @@ int new_player(int sock){
         return -1;
     }
     // Setup players and ixs
-    cell idx = sock|0x8000; //TODO: do something random
+    cell idx;
+    getrandom((char*)&idx,sizeof(idx),0);
+    idx = (idx&0x7FFF)|0x8000;
     while(players[idx].conn)idx=((idx+1)&0x7FFF)|0x8000;
-    getrandom(&players[idx].token,sizeof(long) ,0);
+    getrandom((char*)&players[idx].token,sizeof(long) ,0);
     players[idx].conn=sock;
     players[idx].move[0]=-1;
     players[idx].ref=playing;
     
     // Setup start location
     short startpos[2];
-    getrandom(startpos, 2* sizeof(short) ,0);
+    getrandom((char*)startpos, 2* sizeof(short) ,0);
     startpos[0]=(width+startpos[0]%width)%width;
     startpos[1]=(height+startpos[1]%height)%height;
-    for(int i=width-1;i<width+3;i++)
-      for(int j=height-1;j<height+3;j++){
+    for(int i=width-2;i<width+4;i++)
+      for(int j=height-2;j<height+4;j++){
         grid[(i+startpos[0])%width][(j+startpos[1])%height]=((i&2)||(j&2))?0:idx;
         printf("%d,%d:%d\n", (i+startpos[0])%width, (j+startpos[1])%height,grid[(i+startpos[0])%width][(j+startpos[1])%height]);
     }
@@ -467,8 +463,8 @@ void handle(int sock, char* request){
         request+=4;
         if (memcmp(request,"/ ",2)==0)
             snd(sock,startResp);
-        else if(memcmp(request,"/hammer.min.js ",15)==0)
-            snd(sock,hammerResp);
+/*        else if(memcmp(request,"/hammer.min.js ",15)==0)
+            snd(sock,hammerResp);*/
         else {
             snd(sock,errResp);
             /*CHECK(*(request++) =='/')
@@ -533,7 +529,7 @@ int setup(){
     sprintf(initChunk+k+6,"\r\n");
     fclose(file);
 
-    file = fopen("hammer.min.js","r");
+/*    file = fopen("hammer.min.js","r");
     if (file==0){return -2;}
     int l = strlen(hammerResp);
     k = fread(hammerResp+l+9,1,22000,file);
@@ -542,15 +538,16 @@ int setup(){
     int eight=sprintf(hammerResp+l,"%5d\r\n\r",k);
     if(eight!=8) return -5;
     hammerResp[l+eight]='\n';
-    sprintf(hammerResp+l+eight+k,"\r\n");
+    sprintf(hammerResp+l+eight+k,"\r\n");*/
     
-    width=256;
-    height=256;
+    width=64;
+    height=64;
     return 0;
 }
 
 time_t prev;
 
+// TODO: 'safe' should probably be atomic or something
 bool safe;
 
 void alrm(int x){
@@ -584,10 +581,10 @@ int main(){
     //Really helps debugging
     int enable = 1;
     setsockopt(sock_listen, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
-    struct timeval timeout;
+    /*struct timeval timeout;
     timeout.tv_sec=0;
     timeout.tv_usec=100000;
-    /*if(setsockopt(sock_listen, SOL_SOCKET, SO_RCVTIMEO,
+    if(setsockopt(sock_listen, SOL_SOCKET, SO_RCVTIMEO,
        &timeout, sizeof(timeout))<0){
         puts("setting timeout failed");
         return 1;
