@@ -200,6 +200,8 @@ function select(cx,cy){
   send(x,y)
 }
 function scl(x,y,factor){
+  if (factor>2) factor=2;
+  if (factor<0.5)factor=0.5;
   x/=scale
   y/=scale
   if(d!=0){

@@ -45,7 +45,7 @@ char startResp[] = "HTTP/1.1 200 OK\r\n"
 "<html><body><script>"
 "form=document.createElement('form');"
 "form.method='POST';"
-"form.action='/';"
+"form.action='./';"
 "document.body.appendChild(form);"
 "form.submit()"
 "</script></body></html>";
